@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Status Monitor</title>
+</head>
+
+<body>
+
+<h2 id="myInfo"></h2>
+
+<button onclick="changeStatus('Работаю', 'green')">Работаю</button>
+<button onclick="changeStatus('Занят', 'orange')">Занят</button>
+<button onclick="changeStatus('Отошел', 'red')">Отошел</button>
+
+<h3>Группа</h3>
+<div id="groupList"></div>
+
+<script type="module">
+
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+const URL = "https://rcncrgizzyjohvbdpqnl.supabase.co"; 
+const KEY = "sb_publishable_suGeAHcyUbdU3MNxPdhA_w_fNnePe58"; // твой publishable key
+const supabase = createClient(URL, KEY);
+
+const MY_ID = "{1a8bdce1-f3e2-41a8-aede-be7aea4e8d01}";
+
+window.changeStatus = async (text, color) => {
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({ status: text, color: color })
+        .eq('id', MY_ID);
+
+    if (error) {
+        alert("Ошибка! Проверьте RLS.");
+        console.error(error);
+    } else {
+        fetchGroup();
+    }
+};
+
+async function fetchGroup() {
+
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('username', { ascending: true });
+
+    if (error) {
+        console.error(error);
+        return;
+    }
+
+    const list = document.getElementById('groupList');
+
+    list.innerHTML = data.map(user => `
+        <div>
+            <span style="color:${user.color || 'gray'}">●</span>
+            <b>${user.username}</b> — ${user.status || 'нет статуса'}
+        </div>
+    `).join('');
+
+    const me = data.find(u => u.id === MY_ID);
+
+    if (me) {
+        document.getElementById('myInfo').innerText =
+            "Вы зашли как: " + me.username;
+    }
+}
+
+fetchGroup();
+
+setInterval(fetchGroup, 5000);
+
+</script>
+
+</body>
+</html>
