@@ -1,80 +1,200 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>Status Monitor</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Монитор группы</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2 {
+            margin: 0 0 16px 0;
+            color: #333;
+            font-size: 1.5rem;
+        }
+        
+        h2 {
+            font-size: 1.25rem;
+            margin-bottom: 12px;
+        }
+        
+        .user-info {
+            background: #e3f2fd;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-weight: 500;
+            color: #1976d2;
+        }
+        
+        .status-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .status-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: #f0f0f0;
+            color: #333;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .status-btn:hover {
+            background: #e0e0e0;
+            transform: translateY(-1px);
+        }
+        
+        .status-btn[data-color="#4caf50"] { background: #4caf50; color: white; }
+        .status-btn[data-color="#ff9800"] { background: #ff9800; color: white; }
+        .status-btn[data-color="#2196f3"] { background: #2196f3; color: white; }
+        .status-btn[data-color="#9c27b0"] { background: #9c27b0; color: white; }
+        
+        .group-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .user-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid transparent;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .user-status {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #ddd;
+        }
+    </style>
 </head>
-
 <body>
-
-<h2 id="myInfo"></h2>
-
-<button onclick="changeStatus('Работаю', 'green')">Работаю</button>
-<button onclick="changeStatus('Занят', 'orange')">Занят</button>
-<button onclick="changeStatus('Отошел', 'red')">Отошел</button>
-
-<h3>Группа</h3>
-<div id="groupList"></div>
-
-<script type="module">
-
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
-
-const URL = "https://rcncrgizzyjohvbdpqnl.supabase.co"; 
-const KEY = "sb_publishable_suGeAHcyUbdU3MNxPdhA_w_fNnePe58"; // твой publishable key
-const supabase = createClient(URL, KEY);
-
-const MY_ID = "{1a8bdce1-f3e2-41a8-aede-be7aea4e8d01}";
-
-window.changeStatus = async (text, color) => {
-
-    const { error } = await supabase
-        .from('profiles')
-        .update({ status: text, color: color })
-        .eq('id', MY_ID);
-
-    if (error) {
-        alert("Ошибка! Проверьте RLS.");
-        console.error(error);
-    } else {
-        fetchGroup();
-    }
-};
-
-async function fetchGroup() {
-
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('username', { ascending: true });
-
-    if (error) {
-        console.error(error);
-        return;
-    }
-
-    const list = document.getElementById('groupList');
-
-    list.innerHTML = data.map(user => `
-        <div>
-            <span style="color:${user.color || 'gray'}">●</span>
-            <b>${user.username}</b> — ${user.status || 'нет статуса'}
+    <div class="card">
+        <h1>👤 Мой профиль</h1>
+        <div id="myInfo" class="user-info">Вы зашли как: Загрузка...</div>
+        
+        <h2>Статус</h2>
+        <div class="status-buttons">
+            <button class="status-btn" onclick="changeStatus('Учусь', '#4caf50')">📚 Учусь</button>
+            <button class="status-btn" onclick="changeStatus('Кофе-брейк', '#ff9800')">☕ Кофе</button>
+            <button class="status-btn" onclick="changeStatus('В игре', '#2196f3')">🎮 В игре</button>
+            <button class="status-btn" onclick="changeStatus('Дома', '#9c27b0')">🏠 Дома</button>
         </div>
-    `).join('');
+    </div>
+    
+    <div class="card">
+        <h2>👥 Монитор группы</h2>
+        <div id="groupList" class="group-list">
+            <!-- Список будет загружен динамически -->
+            <div class="user-item">
+                <div class="status-dot" style="background: #ff9800"></div>
+                <div>
+                    <div class="user-name">Almas</div>
+                    <div class="user-status">Кофе-брейк</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    const me = data.find(u => u.id === MY_ID);
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+        
+        const URL = "https://rcncrgizzyjohvbdpqnl.supabase.co"; 
+        const KEY = "sb_publishable_suGeAHcyUbdU3MNxPdhA_w_fNnePe58"; // твой publishable key
+        const supabase = createClient(URL, KEY);
+        
+        const MY_ID = "{1a8bdce1-f3e2-41a8-aede-be7aea4e8d01}";
 
-    if (me) {
-        document.getElementById('myInfo').innerText =
-            "Вы зашли как: " + me.username;
-    }
-}
 
-fetchGroup();
+        window.changeStatus = async (text, color) => {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ status: text, color: color })
+                .eq('id', MY_ID);
 
-setInterval(fetchGroup, 5000);
+            if (error) {
+                alert("Ошибка! Проверьте RLS политики в Supabase.");
+                console.error(error);
+            } else {
+                fetchGroup();
+            }
+        };
 
-</script>
+        async function fetchGroup() {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .order('username', { ascending: true });
 
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            const list = document.getElementById('groupList');
+            if (list) {
+                list.innerHTML = data.map(user => {
+                    return `<div class="user-item">
+                        <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
+                        <div>
+                            <div class="user-name">${user.username}</div>
+                            <div class="user-status">${user.status || 'Статус не задан'}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+
+            const me = data.find(u => u.id === MY_ID);
+            const myInfo = document.getElementById('myInfo');
+            if (me && myInfo) {
+                myInfo.innerText = `Вы зашли как: ${me.username}`;
+            }
+        }
+
+        fetchGroup();
+        setInterval(fetchGroup, 5000);
+    </script>
 </body>
 </html>
