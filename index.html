@@ -96,8 +96,14 @@ hr {
 
 <div class="card">
 <h1>👤 Вход / Мой профиль</h1>
+
 <input type="text" id="nameInput" placeholder="Введите ваше имя" style="padding:8px; width:70%; margin-right:8px;">
 <button onclick="login()">Войти</button>
+
+<!-- Кнопка Google входа -->
+<button onclick="loginWithGoogle()" style="margin-top:10px;padding:8px 16px;border-radius:6px;border:none;background:#4285F4;color:white;cursor:pointer;">
+Войти через Google
+</button>
 
 <div id="myInfo" class="user-info" style="display:none;"></div>
 
@@ -117,20 +123,18 @@ hr {
 
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
-        
-        const URL = "https://dpnyllkodptnkhdvcnhk.supabase.co"; 
-        const KEY = "sb_publishable_suGeAHcyUbdU3MNxPdhA_w_fNnePe58"; // твой publishable key
-        const supabase = createClient(URL, KEY);
-        
-        const MY_ID = "555810e4-e3fd-4b9b-95fb-22e559cccb96";
 
+const URL = "https://dpnyllkodptnkhdvcnhk.supabase.co"; 
+const KEY = "sb_publishable_suGeAHcyUbdU3MNxPdhA_w_fNnePe58"; 
+const supabase = createClient(URL, KEY);
 
-// Вход пользователя
+let MY_ID = null; // теперь меняется после Google входа
+
+// Вход пользователя через имя
 async function login() {
     const name = document.getElementById('nameInput').value.trim();
     if(!name) return alert("Введите имя!");
 
-    // Проверяем, есть ли такой пользователь
     let { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -138,8 +142,7 @@ async function login() {
         .limit(1)
         .single();
 
-    if(error && error.code !== 'PGRST116'){ // если не найден — создаём
-        // создаём нового пользователя
+    if(error && error.code !== 'PGRST116'){ 
         const { data: newData, error: insertError } = await supabase
             .from('profiles')
             .insert([{ username: name, status: 'Онлайн', color:'#4caf50' }])
@@ -188,7 +191,6 @@ async function fetchGroup() {
         return;
     }
 
-    // Список группы
     const list = document.getElementById('groupList');
     list.innerHTML = data.map(user => `
         <div class="user-item">
@@ -200,7 +202,6 @@ async function fetchGroup() {
         </div>
     `).join('');
 
-    // Мой профиль
     if(MY_ID){
         const me = data.find(u=>u.id===MY_ID);
         if(me){
@@ -208,6 +209,54 @@ async function fetchGroup() {
         }
     }
 }
+
+// Вход через Google
+async function loginWithGoogle() {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google'
+    });
+
+    if(error){
+        console.error(error);
+        alert("Ошибка входа через Google");
+    }
+}
+
+// Проверка авторизованного пользователя
+async function checkUser(){
+    const { data } = await supabase.auth.getUser();
+
+    if(data.user){
+        const email = data.user.email;
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('username', email)
+            .single();
+
+        if(!profile){
+            const { data:newUser } = await supabase
+                .from('profiles')
+                .insert([{ 
+                    username: email,
+                    status: "Онлайн",
+                    color: "#4caf50"
+                }])
+                .select()
+                .single();
+            MY_ID = newUser.id;
+        } else {
+            MY_ID = profile.id;
+        }
+
+        document.getElementById('myInfo').style.display = 'block';
+        document.getElementById('myInfo').innerText = "Вы зашли как: " + email;
+        fetchGroup();
+    }
+}
+
+checkUser();
 
 // Обновление каждые 5 секунд
 setInterval(fetchGroup, 5000);
