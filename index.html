@@ -129,9 +129,9 @@ const URL = "https://dpnyllkodptnkhdvcnhk.supabase.co";
 const KEY = "sb_publishable_suGeAHcyUbdU3MNxPdhA_w_fNnePe58"; 
 const supabase = createClient(URL, KEY);
 
-let MY_ID = null; // ID пользователя
+let MY_ID = null;
 
-// Вход через имя
+// ======= Вход через имя =======
 async function login() {
     const name = document.getElementById('nameInput').value.trim();
     if(!name) return alert("Введите имя!");
@@ -163,19 +163,16 @@ async function login() {
     fetchGroup();
 }
 
-// Вход через Google
+// ======= Вход через Google =======
 async function loginWithGoogle() {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google'
-    });
-
+    const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
     if(error){
         console.error(error);
         alert("Ошибка входа через Google");
     }
 }
 
-// Изменение статуса
+// ======= Изменение статуса =======
 window.changeStatus = async (text, color) => {
     if(!MY_ID) return alert("Сначала введите имя!");
 
@@ -192,7 +189,7 @@ window.changeStatus = async (text, color) => {
     }
 }
 
-// Получение всех пользователей
+// ======= Получение списка пользователей =======
 async function fetchGroup() {
     const { data, error } = await supabase
         .from('profiles')
@@ -223,7 +220,7 @@ async function fetchGroup() {
     }
 }
 
-// Проверка авторизованного пользователя при загрузке
+// ======= Проверка авторизованного пользователя при загрузке =======
 async function checkUser(){
     const { data } = await supabase.auth.getUser();
 
@@ -257,15 +254,12 @@ async function checkUser(){
     }
 }
 
-// Делаем функции глобальными для кнопок
+// ======= Делаем функции глобальными для кнопок =======
 window.login = login;
 window.loginWithGoogle = loginWithGoogle;
 
 checkUser();
-
-// Автообновление группы каждые 5 секунд
-setInterval(fetchGroup, 5000);
-
+setInterval(fetchGroup, 5000); // автообновление группы каждые 5 секунд
 </script>
 
 </body>
