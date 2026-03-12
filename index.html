@@ -101,7 +101,8 @@ hr {
 <button onclick="login()">Войти</button>
 
 <!-- Кнопка Google входа -->
-<button onclick="loginWithGoogle()" style="margin-top:10px;padding:8px 16px;border-radius:6px;border:none;background:#4285F4;color:white;cursor:pointer;">
+<button onclick="loginWithGoogle()" 
+        style="margin-top:10px;padding:8px 16px;border-radius:6px;border:none;background:#4285F4;color:white;cursor:pointer;">
 Войти через Google
 </button>
 
@@ -128,9 +129,9 @@ const URL = "https://dpnyllkodptnkhdvcnhk.supabase.co";
 const KEY = "sb_publishable_suGeAHcyUbdU3MNxPdhA_w_fNnePe58"; 
 const supabase = createClient(URL, KEY);
 
-let MY_ID = null; // теперь меняется после Google входа
+let MY_ID = null; // ID пользователя
 
-// Вход пользователя через имя
+// Вход через имя
 async function login() {
     const name = document.getElementById('nameInput').value.trim();
     if(!name) return alert("Введите имя!");
@@ -160,6 +161,18 @@ async function login() {
 
     document.getElementById('myInfo').style.display = 'block';
     fetchGroup();
+}
+
+// Вход через Google
+async function loginWithGoogle() {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google'
+    });
+
+    if(error){
+        console.error(error);
+        alert("Ошибка входа через Google");
+    }
 }
 
 // Изменение статуса
@@ -210,19 +223,7 @@ async function fetchGroup() {
     }
 }
 
-// Вход через Google
-async function loginWithGoogle() {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google'
-    });
-
-    if(error){
-        console.error(error);
-        alert("Ошибка входа через Google");
-    }
-}
-
-// Проверка авторизованного пользователя
+// Проверка авторизованного пользователя при загрузке
 async function checkUser(){
     const { data } = await supabase.auth.getUser();
 
@@ -256,10 +257,15 @@ async function checkUser(){
     }
 }
 
+// Делаем функции глобальными для кнопок
+window.login = login;
+window.loginWithGoogle = loginWithGoogle;
+
 checkUser();
 
-// Обновление каждые 5 секунд
+// Автообновление группы каждые 5 секунд
 setInterval(fetchGroup, 5000);
+
 </script>
 
 </body>
